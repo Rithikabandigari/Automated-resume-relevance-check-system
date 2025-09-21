@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Resume Relevance MVP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h2 {
+      margin-top: 40px;
+    }
+    form {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, button {
+      margin-top: 5px;
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005ea2;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 15px;
+      border: 1px solid #ccc;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Resume Relevance MVP</h1>
+
+<h2>Upload Job Description</h2>
+<form id="jdForm">
+  <label for="jdFile">JD File (.txt, .pdf, .docx)</label>
+  <input id="jdFile" type="file" accept=".txt,.pdf,.docx" required />
+  <label for="jdTitle">Role Title</label>
+  <input id="jdTitle" placeholder="e.g. Backend Engineer" required />
+  <button type="submit">Upload JD</button>
+</form>
+
+<h2>Upload Resume</h2>
+<form id="resForm">
+  <label for="resFile">Resume File (.txt, .pdf, .docx)</label>
+  <input id="resFile" type="file" accept=".txt,.pdf,.docx" required />
+  <label for="resName">Candidate Name</label>
+  <input id="resName" placeholder="e.g. Rithika" required />
+  <button type="submit">Upload Resume</button>
+</form>
+
+<h2>Evaluate Resume Against JD</h2>
+<form id="evalForm">
+  <label for="evalJd">JD ID</label>
+  <input id="evalJd" placeholder="Auto-filled after JD upload" required />
+  <label for="evalRes">Resume ID</label>
+  <input id="evalRes" placeholder="Auto-filled after Resume upload" required />
+  <button type="submit">Evaluate</button>
+</form>
+
+<h2>Output</h2>
+<pre id="out">Waiting for input...</pre>
+
+<script>
+  const out = (d) => {
+    document.getElementById('out').innerText = JSON.stringify(d, null, 2);
+  };
+
+  let jdID = null, resumeID = null;
+
+  document.getElementById('jdForm').onsubmit = async (e) => {
+    e.preventDefault();
+    out("Uploading JD...");
+    const file = document.getElementById('jdFile').files[0];
+    const title = document.getElementById('jdTitle').value;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('title', title);
+    const res = await fetch('http://127.0.0.1:8000/upload_jd', {
+      method: 'POST',
+      body: fd
+    });
+    const data = await res.json();
+    jdID = data.jd_id;
+    document.getElementById('evalJd').value = jdID;
+    out(data);
+  };
+
+  document.getElementById('resForm').onsubmit = async (e) => {
+    e.preventDefault();
+    out("Uploading Resume...");
+    const file = document.getElementById('resFile').files[0];
+    const name = document.getElementById('resName').value;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('name', name);
+    const res = await fetch('http://127.0.0.1:8000/upload_resume', {
+      method: 'POST',
+      body: fd
+    });
+    const data = await res.json();
+    resumeID = data.resume_id;
+    document.getElementById('evalRes').value = resumeID;
+    out(data);
+  };
+
+  document.getElementById('evalForm').onsubmit = async (e) => {
+    e.preventDefault();
+    out("Evaluating...");
+    const fd = new FormData();
+    fd.append('jd_id', document.getElementById('evalJd').value);
+    fd.append('resume_id', document.getElementById('evalRes').value);
+    const res = await fetch('http://127.0.0.1:8000/evaluate', {
+      method: 'POST',
+      body: fd
+    });
+    const data = await res.json();
+    out(data);
+  };
+</script>
+
+</body>
+</html>
